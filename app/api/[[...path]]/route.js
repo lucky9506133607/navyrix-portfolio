@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { MongoClient } from "mongodb";
 import { v4 as uuidv4 } from "uuid";
+import { sendContactEmails, subscribeNewsletter } from "@/lib/resend";
+
+export const runtime = "nodejs";
 
 // ---------- Mongo helpers ----------
 let _client = null;
@@ -39,19 +42,8 @@ async function forwardLead(payload) {
   const provider = (process.env.LEAD_PROVIDER || "").toLowerCase();
   try {
     if (provider === "resend" && process.env.RESEND_API_KEY) {
-      await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: process.env.LEAD_FROM_EMAIL || "leads@resend.dev",
-          to: [process.env.LEAD_TO_EMAIL],
-          subject: `New lead — ${payload.fullName} (${payload.businessName || "—"})`,
-          html: `<pre>${JSON.stringify(payload, null, 2)}</pre>`,
-        }),
-      });
+      // Uses the rich Resend adapter with branded HTML templates.
+      await sendContactEmails(payload);
     } else if (provider === "formspree" && process.env.FORMSPREE_ENDPOINT) {
       await fetch(process.env.FORMSPREE_ENDPOINT, {
         method: "POST",
@@ -101,18 +93,9 @@ async function forwardNewsletter(email) {
           body: JSON.stringify({ api_key: process.env.CONVERTKIT_API_KEY, email }),
         }
       );
-    } else if (provider === "resend" && process.env.RESEND_API_KEY && process.env.RESEND_AUDIENCE_ID) {
-      await fetch(
-        `https://api.resend.com/audiences/${process.env.RESEND_AUDIENCE_ID}/contacts`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, unsubscribed: false }),
-        }
-      );
+    } else if (provider === "resend" && process.env.RESEND_API_KEY) {
+      // Sends a branded welcome email (and adds to audience if RESEND_AUDIENCE_ID is set).
+      await subscribeNewsletter(email);
     }
     // Supabase would use its SDK client-side or via service key.
   } catch (err) {

@@ -175,6 +175,8 @@ test_plan:
 
 agent_communication:
     -agent: "main"
-    -message: "Initial build complete. Please test /api/contact and /api/newsletter thoroughly: valid + invalid emails, missing required fields, duplicate newsletter emails, and confirm data actually lands in Mongo. Base URL should be /api (kubernetes-routed). MONGO_URL and DB_NAME are in /app/.env."
+    -message: "Initial build complete. Please test /api/contact and /api/newsletter thoroughly: valid + invalid emails, missing required fields, duplicate newsletter emails, and confirm data actually lands in Mongo. Base URL should be /api (kubernetes-routed). MONGODB_URL and DB_NAME are in /app/.env."
+    -agent: "main"
+    -message: "Resend integration added. LEAD_PROVIDER=resend + NEWSLETTER_PROVIDER=resend, using onboarding@resend.dev sender (sandbox). Verified end-to-end: agency notification, branded lead confirmation, and newsletter welcome all deliver successfully to the account owner email (ls2170184@gmail.com). Third-party delivery to arbitrary recipients requires a verified domain (documented for user)."
     -agent: "testing"
     -message: "Backend testing complete. Created backend_test.py with comprehensive test suite covering all 9 test scenarios. ALL TESTS PASSED (100% success rate). Verified: (1) GET /api/health returns correct response. (2) POST /api/contact handles happy path, missing fields, and invalid email correctly. (3) POST /api/newsletter handles happy path, duplicates, and invalid email correctly. (4) GET /api/leads and GET /api/newsletter confirm data persistence in MongoDB. All endpoints working as expected with proper validation and error handling."
