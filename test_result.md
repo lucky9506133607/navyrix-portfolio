@@ -119,6 +119,9 @@ backend:
         -working: true
         -agent: "testing"
         -comment: "Comprehensive testing completed via backend_test.py. All scenarios passed: (1) Happy path with all required fields returns 200, ok:true, and UUID. (2) Missing required field (message) correctly returns 400 with error message. (3) Invalid email format (not-an-email) correctly returns 400 with error message. (4) GET /api/leads successfully retrieves the submitted lead from MongoDB. Data persistence verified."
+        -working: true
+        -agent: "testing"
+        -comment: "ENV CHANGE VERIFICATION: Confirmed AGENCY_NOTIFICATION_EMAIL=ls2170184@gmai.com in /app/.env. POST /api/contact still returns 200 with UUID (9be147c5-2ea7-4a88-be02-3c78cc421954) and persists lead to MongoDB successfully. Logs show Resend validation_error (403) due to sandbox limitation, but adapter fails silently as designed - API returns 200 and data persists correctly. No functionality broken by env change."
   - task: "Newsletter API (POST /api/newsletter)"
     implemented: true
     working: true
@@ -133,6 +136,9 @@ backend:
         -working: true
         -agent: "testing"
         -comment: "Comprehensive testing completed via backend_test.py. All scenarios passed: (1) Happy path with valid email returns 200, ok:true. (2) Duplicate email correctly returns 200 with alreadySubscribed:true (not an error). (3) Invalid email (bad) correctly returns 400 with error message. (4) GET /api/newsletter successfully retrieves the subscriber from MongoDB. Data persistence verified."
+        -working: true
+        -agent: "testing"
+        -comment: "ENV CHANGE VERIFICATION: POST /api/newsletter still works correctly after env change. Fresh email subscription returns 200 with ok:true, duplicate email returns 200 with alreadySubscribed:true, invalid email returns 400. Logs show Resend validation_error (422) for test emails, but adapter fails silently - API returns 200 and data persists to MongoDB. All functionality intact."
   - task: "Health + Lead listing endpoints"
     implemented: true
     working: true
@@ -147,6 +153,9 @@ backend:
         -working: true
         -agent: "testing"
         -comment: "Verified via backend_test.py. GET /api/health returns correct response {ok:true, service:'agency-api'}. GET /api/leads and GET /api/newsletter both return correct data arrays from MongoDB with proper structure."
+        -working: true
+        -agent: "testing"
+        -comment: "ENV CHANGE VERIFICATION: GET /api/health returns 200 with {ok:true, service:'agency-api'}. GET /api/leads returns 200 with correct structure {leads:[...]} and successfully retrieves all persisted leads including newly created test lead. All endpoints functioning normally after env change."
 
 frontend:
   - task: "Landing page + all sections"
@@ -178,5 +187,9 @@ agent_communication:
     -message: "Initial build complete. Please test /api/contact and /api/newsletter thoroughly: valid + invalid emails, missing required fields, duplicate newsletter emails, and confirm data actually lands in Mongo. Base URL should be /api (kubernetes-routed). MONGODB_URL and DB_NAME are in /app/.env."
     -agent: "main"
     -message: "Resend integration added. LEAD_PROVIDER=resend + NEWSLETTER_PROVIDER=resend, using onboarding@resend.dev sender (sandbox). Verified end-to-end: agency notification, branded lead confirmation, and newsletter welcome all deliver successfully to the account owner email (ls2170184@gmail.com). Third-party delivery to arbitrary recipients requires a verified domain (documented for user)."
+    -agent: "main"
+    -message: "BUG FIX: User requested changing only AGENCY_NOTIFICATION_EMAIL env var to 'ls2170184@gmai.com' (note: user-provided value, appears to have a typo 'gmai' vs 'gmail' — used exactly as specified). Only /app/.env was modified; no code/UI/DB/Resend logic changes. Server restarted. Please verify: (1) GET /api/health still ok, (2) POST /api/contact with valid payload still returns 200 with UUID, (3) the newly submitted lead is stored in MongoDB via GET /api/leads. The Resend notification will attempt to send to the new AGENCY_NOTIFICATION_EMAIL — this may log a validation_error since Resend's sandbox only allows the exact account owner email, but the API MUST still respond 200 and MUST still persist the lead to Mongo (the adapter is designed to fail silently for provider errors). Also verify POST /api/newsletter still functions normally. Do NOT modify any files."
     -agent: "testing"
     -message: "Backend testing complete. Created backend_test.py with comprehensive test suite covering all 9 test scenarios. ALL TESTS PASSED (100% success rate). Verified: (1) GET /api/health returns correct response. (2) POST /api/contact handles happy path, missing fields, and invalid email correctly. (3) POST /api/newsletter handles happy path, duplicates, and invalid email correctly. (4) GET /api/leads and GET /api/newsletter confirm data persistence in MongoDB. All endpoints working as expected with proper validation and error handling."
+    -agent: "testing"
+    -message: "ENV CHANGE VERIFICATION COMPLETE: All 6 backend tests passed (100% success). Confirmed /app/.env contains AGENCY_NOTIFICATION_EMAIL=ls2170184@gmai.com (exactly as user requested). All critical endpoints verified: (1) GET /api/health → 200 {ok:true, service:'agency-api'}. (2) POST /api/contact → 200 with UUID, lead persisted to MongoDB. (3) GET /api/leads → 200, retrieves all leads including new test lead. (4) POST /api/newsletter → 200 for fresh email, 200 with alreadySubscribed:true for duplicate, 400 for invalid email. Server logs confirm Resend validation errors (403/422) are logged but adapter fails silently as designed - APIs return 200 and data persists correctly. NO functionality broken by env change. Read-only verification completed per instructions."

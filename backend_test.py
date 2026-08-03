@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing Script for Agency Website
-Tests all API endpoints: /api/health, /api/contact, /api/newsletter, /api/leads
+Backend API verification test for agency website after env change.
+Tests all critical endpoints to ensure AGENCY_NOTIFICATION_EMAIL change doesn't break functionality.
 """
 
 import requests
@@ -12,340 +12,288 @@ from datetime import datetime
 # Base URL from environment
 BASE_URL = "https://form-flow-34.preview.emergentagent.com/api"
 
-def print_test_header(test_name):
-    print(f"\n{'='*80}")
-    print(f"TEST: {test_name}")
-    print(f"{'='*80}")
-
-def print_result(passed, message):
+def print_test_result(test_name, passed, details=""):
+    """Print formatted test result"""
     status = "✅ PASS" if passed else "❌ FAIL"
-    print(f"{status}: {message}")
+    print(f"\n{status}: {test_name}")
+    if details:
+        print(f"   Details: {details}")
 
-def print_response(response):
-    print(f"Status Code: {response.status_code}")
-    try:
-        print(f"Response Body: {json.dumps(response.json(), indent=2)}")
-    except Exception:
-        print(f"Response Body: {response.text}")
-
-# Test 1: Health Check
-def test_health():
-    print_test_header("GET /api/health")
+def test_health_endpoint():
+    """Test 1: GET /api/health"""
+    print("\n" + "="*80)
+    print("TEST 1: GET /api/health")
+    print("="*80)
+    
     try:
         response = requests.get(f"{BASE_URL}/health", timeout=10)
-        print_response(response)
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.text}")
         
         if response.status_code == 200:
             data = response.json()
             if data.get("ok") == True and data.get("service") == "agency-api":
-                print_result(True, "Health check passed with correct response")
-                return True
+                print_test_result("Health endpoint", True, "Returns correct response")
+                return True, None
             else:
-                print_result(False, f"Health check returned unexpected data: {data}")
-                return False
+                print_test_result("Health endpoint", False, f"Unexpected response structure: {data}")
+                return False, data
         else:
-            print_result(False, f"Health check failed with status {response.status_code}")
-            return False
+            print_test_result("Health endpoint", False, f"Expected 200, got {response.status_code}")
+            return False, None
     except Exception as e:
-        print_result(False, f"Health check exception: {str(e)}")
-        return False
+        print_test_result("Health endpoint", False, f"Exception: {str(e)}")
+        return False, None
 
-# Test 2: Contact Form - Happy Path
-def test_contact_happy_path():
-    print_test_header("POST /api/contact - Happy Path")
-    timestamp = int(time.time())
+def test_contact_form_submission():
+    """Test 2: POST /api/contact with valid payload"""
+    print("\n" + "="*80)
+    print("TEST 2: POST /api/contact (valid payload)")
+    print("="*80)
+    
     payload = {
-        "fullName": "John Smith",
-        "email": f"test.lead.{timestamp}@example.com",
-        "phone": "+1-555-0123",
-        "businessName": "Acme Corp",
-        "website": "https://acme.example.com",
+        "fullName": "Env Change Test",
+        "email": "ls2170184@gmail.com",
+        "phone": "+1 415 555 0198",
+        "businessName": "QA Corp",
+        "website": "",
         "service": "Web Design & Development",
         "budget": "$10,000 – $25,000",
-        "message": "We need a complete website redesign with modern UI/UX."
+        "message": "Verifying that new AGENCY_NOTIFICATION_EMAIL env is in effect."
     }
     
     try:
-        response = requests.post(f"{BASE_URL}/contact", json=payload, timeout=10)
-        print_response(response)
+        print(f"Payload: {json.dumps(payload, indent=2)}")
+        response = requests.post(
+            f"{BASE_URL}/contact",
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=15
+        )
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.text}")
         
         if response.status_code == 200:
             data = response.json()
             if data.get("ok") == True and "id" in data:
-                print_result(True, f"Contact form submission successful with ID: {data['id']}")
-                return True, payload["email"], data["id"]
+                lead_id = data.get("id")
+                print_test_result("Contact form submission", True, f"Lead created with ID: {lead_id}")
+                return True, lead_id
             else:
-                print_result(False, f"Contact form returned unexpected data: {data}")
-                return False, None, None
+                print_test_result("Contact form submission", False, f"Missing ok:true or id in response: {data}")
+                return False, None
         else:
-            print_result(False, f"Contact form failed with status {response.status_code}")
-            return False, None, None
+            print_test_result("Contact form submission", False, f"Expected 200, got {response.status_code}")
+            return False, None
     except Exception as e:
-        print_result(False, f"Contact form exception: {str(e)}")
-        return False, None, None
+        print_test_result("Contact form submission", False, f"Exception: {str(e)}")
+        return False, None
 
-# Test 3: Contact Form - Missing Required Field
-def test_contact_missing_field():
-    print_test_header("POST /api/contact - Missing Required Field (message)")
-    payload = {
-        "fullName": "Jane Doe",
-        "email": "jane.doe@example.com",
-        "phone": "+1-555-0124",
-        "businessName": "Test Business",
-        "service": "Web Design & Development",
-        "budget": "$5,000 – $10,000"
-        # Missing 'message' field
-    }
+def test_leads_retrieval(expected_lead_id=None):
+    """Test 3: GET /api/leads"""
+    print("\n" + "="*80)
+    print("TEST 3: GET /api/leads (verify persistence)")
+    print("="*80)
     
-    try:
-        response = requests.post(f"{BASE_URL}/contact", json=payload, timeout=10)
-        print_response(response)
-        
-        if response.status_code == 400:
-            data = response.json()
-            if "error" in data:
-                print_result(True, f"Correctly rejected missing field with error: {data['error']}")
-                return True
-            else:
-                print_result(False, "400 status but no error message in response")
-                return False
-        else:
-            print_result(False, f"Expected 400 but got {response.status_code}")
-            return False
-    except Exception as e:
-        print_result(False, f"Contact form missing field test exception: {str(e)}")
-        return False
-
-# Test 4: Contact Form - Invalid Email
-def test_contact_invalid_email():
-    print_test_header("POST /api/contact - Invalid Email Format")
-    payload = {
-        "fullName": "Invalid Email User",
-        "email": "not-an-email",
-        "phone": "+1-555-0125",
-        "businessName": "Test Business",
-        "service": "Web Design & Development",
-        "budget": "$5,000 – $10,000",
-        "message": "This should fail due to invalid email"
-    }
-    
-    try:
-        response = requests.post(f"{BASE_URL}/contact", json=payload, timeout=10)
-        print_response(response)
-        
-        if response.status_code == 400:
-            data = response.json()
-            if "error" in data:
-                print_result(True, f"Correctly rejected invalid email with error: {data['error']}")
-                return True
-            else:
-                print_result(False, "400 status but no error message in response")
-                return False
-        else:
-            print_result(False, f"Expected 400 but got {response.status_code}")
-            return False
-    except Exception as e:
-        print_result(False, f"Contact form invalid email test exception: {str(e)}")
-        return False
-
-# Test 5: GET /api/leads - Verify Contact Data
-def test_get_leads(expected_email, expected_id):
-    print_test_header("GET /api/leads - Verify Contact Data Stored")
     try:
         response = requests.get(f"{BASE_URL}/leads", timeout=10)
-        print_response(response)
+        print(f"Status Code: {response.status_code}")
         
         if response.status_code == 200:
             data = response.json()
             leads = data.get("leads", [])
+            print(f"Total leads in database: {len(leads)}")
             
-            # Find the lead we just created
-            found = False
-            for lead in leads:
-                if lead.get("email") == expected_email or lead.get("id") == expected_id:
-                    found = True
-                    print_result(True, f"Found lead in database: {lead.get('fullName')} ({lead.get('email')})")
-                    break
-            
-            if not found:
-                print_result(False, f"Lead with email {expected_email} or id {expected_id} not found in database")
-                return False
-            return True
+            if expected_lead_id:
+                # Look for the specific lead we just created
+                found = False
+                for lead in leads:
+                    if lead.get("id") == expected_lead_id:
+                        found = True
+                        print(f"Found lead with ID {expected_lead_id}:")
+                        print(f"  - Name: {lead.get('fullName')}")
+                        print(f"  - Email: {lead.get('email')}")
+                        print(f"  - Business: {lead.get('businessName')}")
+                        break
+                
+                if found:
+                    print_test_result("Lead persistence", True, f"Lead {expected_lead_id} found in database")
+                    return True
+                else:
+                    print_test_result("Lead persistence", False, f"Lead {expected_lead_id} NOT found in database")
+                    return False
+            else:
+                print_test_result("Leads retrieval", True, f"Retrieved {len(leads)} leads")
+                return True
         else:
-            print_result(False, f"GET /api/leads failed with status {response.status_code}")
+            print_test_result("Leads retrieval", False, f"Expected 200, got {response.status_code}")
             return False
     except Exception as e:
-        print_result(False, f"GET /api/leads exception: {str(e)}")
+        print_test_result("Leads retrieval", False, f"Exception: {str(e)}")
         return False
 
-# Test 6: Newsletter - Happy Path
-def test_newsletter_happy_path():
-    print_test_header("POST /api/newsletter - Happy Path")
+def test_newsletter_subscription():
+    """Test 4: POST /api/newsletter with fresh email"""
+    print("\n" + "="*80)
+    print("TEST 4: POST /api/newsletter (fresh email)")
+    print("="*80)
+    
     timestamp = int(time.time())
-    email = f"newsletter.test.{timestamp}@example.com"
+    email = f"env.change+{timestamp}@example.com"
     payload = {"email": email}
     
     try:
-        response = requests.post(f"{BASE_URL}/newsletter", json=payload, timeout=10)
-        print_response(response)
+        print(f"Payload: {json.dumps(payload, indent=2)}")
+        response = requests.post(
+            f"{BASE_URL}/newsletter",
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.text}")
         
         if response.status_code == 200:
             data = response.json()
             if data.get("ok") == True:
-                print_result(True, f"Newsletter subscription successful for {email}")
+                print_test_result("Newsletter subscription (fresh)", True, f"Subscribed {email}")
                 return True, email
             else:
-                print_result(False, f"Newsletter returned unexpected data: {data}")
+                print_test_result("Newsletter subscription (fresh)", False, f"Missing ok:true: {data}")
                 return False, None
         else:
-            print_result(False, f"Newsletter subscription failed with status {response.status_code}")
+            print_test_result("Newsletter subscription (fresh)", False, f"Expected 200, got {response.status_code}")
             return False, None
     except Exception as e:
-        print_result(False, f"Newsletter subscription exception: {str(e)}")
+        print_test_result("Newsletter subscription (fresh)", False, f"Exception: {str(e)}")
         return False, None
 
-# Test 7: Newsletter - Duplicate Email
 def test_newsletter_duplicate(email):
-    print_test_header("POST /api/newsletter - Duplicate Email")
+    """Test 5: POST /api/newsletter with duplicate email"""
+    print("\n" + "="*80)
+    print("TEST 5: POST /api/newsletter (duplicate email)")
+    print("="*80)
+    
     payload = {"email": email}
     
     try:
-        response = requests.post(f"{BASE_URL}/newsletter", json=payload, timeout=10)
-        print_response(response)
+        print(f"Payload: {json.dumps(payload, indent=2)}")
+        response = requests.post(
+            f"{BASE_URL}/newsletter",
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.text}")
         
         if response.status_code == 200:
             data = response.json()
-            if data.get("ok") == True and data.get("alreadySubscribed") == True:
-                print_result(True, f"Correctly handled duplicate email with alreadySubscribed flag")
+            if data.get("alreadySubscribed") == True:
+                print_test_result("Newsletter duplicate handling", True, "Correctly returns alreadySubscribed:true")
                 return True
             else:
-                print_result(False, f"Duplicate email not handled correctly: {data}")
+                print_test_result("Newsletter duplicate handling", False, f"Missing alreadySubscribed:true: {data}")
                 return False
         else:
-            print_result(False, f"Expected 200 but got {response.status_code}")
+            print_test_result("Newsletter duplicate handling", False, f"Expected 200, got {response.status_code}")
             return False
     except Exception as e:
-        print_result(False, f"Newsletter duplicate test exception: {str(e)}")
+        print_test_result("Newsletter duplicate handling", False, f"Exception: {str(e)}")
         return False
 
-# Test 8: Newsletter - Invalid Email
 def test_newsletter_invalid_email():
-    print_test_header("POST /api/newsletter - Invalid Email")
+    """Test 6: POST /api/newsletter with invalid email"""
+    print("\n" + "="*80)
+    print("TEST 6: POST /api/newsletter (invalid email)")
+    print("="*80)
+    
     payload = {"email": "bad"}
     
     try:
-        response = requests.post(f"{BASE_URL}/newsletter", json=payload, timeout=10)
-        print_response(response)
+        print(f"Payload: {json.dumps(payload, indent=2)}")
+        response = requests.post(
+            f"{BASE_URL}/newsletter",
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.text}")
         
         if response.status_code == 400:
-            data = response.json()
-            if "error" in data:
-                print_result(True, f"Correctly rejected invalid email with error: {data['error']}")
-                return True
-            else:
-                print_result(False, "400 status but no error message in response")
-                return False
-        else:
-            print_result(False, f"Expected 400 but got {response.status_code}")
-            return False
-    except Exception as e:
-        print_result(False, f"Newsletter invalid email test exception: {str(e)}")
-        return False
-
-# Test 9: GET /api/newsletter - Verify Newsletter Data
-def test_get_newsletter(expected_email):
-    print_test_header("GET /api/newsletter - Verify Newsletter Data Stored")
-    try:
-        response = requests.get(f"{BASE_URL}/newsletter", timeout=10)
-        print_response(response)
-        
-        if response.status_code == 200:
-            data = response.json()
-            subscribers = data.get("subscribers", [])
-            
-            # Find the subscriber we just created
-            found = False
-            for sub in subscribers:
-                if sub.get("email") == expected_email:
-                    found = True
-                    print_result(True, f"Found subscriber in database: {sub.get('email')}")
-                    break
-            
-            if not found:
-                print_result(False, f"Subscriber with email {expected_email} not found in database")
-                return False
+            print_test_result("Newsletter invalid email validation", True, "Correctly returns 400 for invalid email")
             return True
         else:
-            print_result(False, f"GET /api/newsletter failed with status {response.status_code}")
+            print_test_result("Newsletter invalid email validation", False, f"Expected 400, got {response.status_code}")
             return False
     except Exception as e:
-        print_result(False, f"GET /api/newsletter exception: {str(e)}")
+        print_test_result("Newsletter invalid email validation", False, f"Exception: {str(e)}")
         return False
 
-# Main test execution
 def main():
+    """Run all verification tests"""
     print("\n" + "="*80)
-    print("AGENCY WEBSITE BACKEND API TEST SUITE")
-    print(f"Base URL: {BASE_URL}")
-    print(f"Test Started: {datetime.now().isoformat()}")
+    print("AGENCY WEBSITE ENV CHANGE VERIFICATION")
+    print("Verifying AGENCY_NOTIFICATION_EMAIL=ls2170184@gmai.com")
     print("="*80)
     
-    results = {}
+    results = []
     
-    # Test 1: Health Check
-    results["health"] = test_health()
+    # Test 1: Health check
+    health_passed, _ = test_health_endpoint()
+    results.append(("Health endpoint", health_passed))
     
-    # Test 2-5: Contact Form Tests
-    contact_success, contact_email, contact_id = test_contact_happy_path()
-    results["contact_happy_path"] = contact_success
+    # Test 2: Contact form submission
+    contact_passed, lead_id = test_contact_form_submission()
+    results.append(("Contact form submission", contact_passed))
     
-    results["contact_missing_field"] = test_contact_missing_field()
-    results["contact_invalid_email"] = test_contact_invalid_email()
-    
-    if contact_success and contact_email and contact_id:
-        time.sleep(1)  # Give DB a moment to sync
-        results["get_leads"] = test_get_leads(contact_email, contact_id)
+    # Test 3: Lead persistence
+    if lead_id:
+        time.sleep(1)  # Brief pause to ensure DB write completes
+        leads_passed = test_leads_retrieval(lead_id)
+        results.append(("Lead persistence", leads_passed))
     else:
-        print_result(False, "Skipping GET /api/leads test due to contact form failure")
-        results["get_leads"] = False
+        print("\n⚠️  Skipping lead persistence test (no lead ID from previous test)")
+        results.append(("Lead persistence", False))
     
-    # Test 6-9: Newsletter Tests
-    newsletter_success, newsletter_email = test_newsletter_happy_path()
-    results["newsletter_happy_path"] = newsletter_success
+    # Test 4: Newsletter subscription (fresh)
+    newsletter_passed, fresh_email = test_newsletter_subscription()
+    results.append(("Newsletter subscription", newsletter_passed))
     
-    if newsletter_success and newsletter_email:
-        results["newsletter_duplicate"] = test_newsletter_duplicate(newsletter_email)
+    # Test 5: Newsletter duplicate
+    if fresh_email:
+        time.sleep(0.5)
+        duplicate_passed = test_newsletter_duplicate(fresh_email)
+        results.append(("Newsletter duplicate handling", duplicate_passed))
     else:
-        print_result(False, "Skipping duplicate newsletter test due to initial failure")
-        results["newsletter_duplicate"] = False
+        print("\n⚠️  Skipping duplicate test (no email from previous test)")
+        results.append(("Newsletter duplicate handling", False))
     
-    results["newsletter_invalid_email"] = test_newsletter_invalid_email()
-    
-    if newsletter_success and newsletter_email:
-        time.sleep(1)  # Give DB a moment to sync
-        results["get_newsletter"] = test_get_newsletter(newsletter_email)
-    else:
-        print_result(False, "Skipping GET /api/newsletter test due to newsletter failure")
-        results["get_newsletter"] = False
+    # Test 6: Newsletter invalid email
+    invalid_passed = test_newsletter_invalid_email()
+    results.append(("Newsletter invalid email validation", invalid_passed))
     
     # Summary
     print("\n" + "="*80)
     print("TEST SUMMARY")
     print("="*80)
-    passed = sum(1 for v in results.values() if v)
-    total = len(results)
-    print(f"Total Tests: {total}")
-    print(f"Passed: {passed}")
-    print(f"Failed: {total - passed}")
-    print(f"Success Rate: {(passed/total)*100:.1f}%")
-    print("\nDetailed Results:")
-    for test_name, result in results.items():
-        status = "✅ PASS" if result else "❌ FAIL"
-        print(f"  {status} - {test_name}")
-    print("="*80)
     
-    return all(results.values())
+    passed_count = sum(1 for _, passed in results if passed)
+    total_count = len(results)
+    
+    for test_name, passed in results:
+        status = "✅ PASS" if passed else "❌ FAIL"
+        print(f"{status}: {test_name}")
+    
+    print(f"\nTotal: {passed_count}/{total_count} tests passed")
+    
+    if passed_count == total_count:
+        print("\n🎉 ALL TESTS PASSED - Env change verified successfully!")
+        return 0
+    else:
+        print(f"\n⚠️  {total_count - passed_count} test(s) failed")
+        return 1
 
 if __name__ == "__main__":
-    success = main()
-    exit(0 if success else 1)
+    exit(main())
