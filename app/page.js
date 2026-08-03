@@ -53,7 +53,6 @@ function Nav() {
             <Sparkles className="h-4 w-4 text-white" />
           </span>
           {siteConfig.logoText}
-          <span className="text-white/40 font-normal hidden sm:inline">Studio</span>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-white/70">
           <a href="#services" className="hover:text-white transition">Services</a>
@@ -403,6 +402,11 @@ function Footer() {
               {siteConfig.agencyName}
             </div>
             <p className="mt-3 text-sm text-white/50 max-w-sm">{siteConfig.tagline}</p>
+            {siteConfig.founders?.length ? (
+              <p className="mt-2 text-xs text-white/40">
+                Founded by {siteConfig.founders.map((f) => f.name).join(" & ")}
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-col md:items-end gap-4">
             <SocialLinks />

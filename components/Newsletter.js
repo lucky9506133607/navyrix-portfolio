@@ -44,7 +44,7 @@ export default function Newsletter() {
       <div className="relative grid md:grid-cols-2 gap-8 items-center">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
-            <Mail className="h-3 w-3" /> The Nexus Newsletter
+            <Mail className="h-3 w-3" /> The NAVYRIX Newsletter
           </div>
           <h3 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-white">
             Design & growth insights, in your inbox.
