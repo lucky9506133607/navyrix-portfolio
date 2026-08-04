@@ -57,8 +57,8 @@ function Nav() {
         <nav className="hidden md:flex items-center gap-8 text-sm text-white/70">
           <a href="#services" className="hover:text-white transition">Services</a>
           <a href="#work" className="hover:text-white transition">Work</a>
-          <a href="#about" className="hover:text-white transition">About</a>
           <a href="#faq" className="hover:text-white transition">FAQ</a>
+          <a href="#contact" className="hover:text-white transition">Contact</a>
         </nav>
         <a href="#contact">
           <Button size="sm" className="bg-white text-black hover:bg-white/90 font-medium rounded-full">
@@ -84,12 +84,14 @@ function Hero() {
             Taking on 2 new projects this quarter
           </div>
           <h1 className="mt-6 text-5xl sm:text-6xl md:text-7xl font-semibold tracking-tight text-white leading-[1.05]">
-            We craft{" "}
-            <span className="gradient-text">brands & digital</span>{" "}
-            experiences that convert.
+            Build Websites That{" "}
+            <span className="gradient-text">Grow Your Business</span>
           </h1>
           <p className="mt-6 text-lg md:text-xl text-white/60 max-w-2xl mx-auto">
-            {siteConfig.shortDescription}
+            {siteConfig.hero.subheading}
+          </p>
+          <p className="mt-4 text-sm md:text-base text-white/45 max-w-2xl mx-auto">
+            {siteConfig.hero.supportingText}
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <a href="#contact">
@@ -127,21 +129,7 @@ function Hero() {
           </div>
         </motion.div>
 
-        <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-          {siteConfig.stats.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="text-center"
-            >
-              <div className="text-3xl md:text-4xl font-semibold text-white">{s.value}</div>
-              <div className="mt-1 text-sm text-white/50">{s.label}</div>
-            </motion.div>
-          ))}
-        </div>
+        <div className="mt-20 max-w-4xl mx-auto" />
       </div>
     </section>
   );
@@ -210,6 +198,8 @@ function Portfolio() {
               id={`work-${p.id}`}
               key={p.id}
               href={p.link}
+              target="_blank"
+              rel="noopener noreferrer"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -365,8 +355,10 @@ function Contact() {
                   <MapPin className="h-4 w-4" />
                 </span>
                 <div>
-                  <div>{siteConfig.contact.address.line1}, {siteConfig.contact.address.line2}</div>
-                  <div className="text-white/50 text-sm">{siteConfig.contact.address.city}, {siteConfig.contact.address.region} {siteConfig.contact.address.postal}</div>
+                  <div>{[siteConfig.contact.address.line1, siteConfig.contact.address.line2].filter(Boolean).join(", ")}</div>
+                  <div className="text-white/50 text-sm">
+                    {[siteConfig.contact.address.city, siteConfig.contact.address.region, siteConfig.contact.address.postal, siteConfig.contact.address.country].filter(Boolean).join(" ")}
+                  </div>
                 </div>
               </div>
             </div>
@@ -403,9 +395,14 @@ function Footer() {
             </div>
             <p className="mt-3 text-sm text-white/50 max-w-sm">{siteConfig.tagline}</p>
             {siteConfig.founders?.length ? (
-              <p className="mt-2 text-xs text-white/40">
-                Founded by {siteConfig.founders.map((f) => f.name).join(" & ")}
-              </p>
+              <div className="mt-3 space-y-0.5 text-xs text-white/50">
+                {siteConfig.founders.map((f) => (
+                  <div key={f.name}>
+                    <span className="text-white/70">{f.name}</span>
+                    <span className="text-white/40"> · {f.role}</span>
+                  </div>
+                ))}
+              </div>
             ) : null}
           </div>
           <div className="flex flex-col md:items-end gap-4">
@@ -433,7 +430,6 @@ function App() {
       <Hero />
       <Services />
       <Portfolio />
-      <Testimonials />
       <FAQ />
       <Contact />
       <Footer />

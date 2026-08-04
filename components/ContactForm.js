@@ -105,27 +105,27 @@ export default function ContactForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <Label htmlFor="fullName" className="text-white/80">Full Name *</Label>
-          <Input id="fullName" value={values.fullName} onChange={set("fullName")} placeholder="Jane Doe" className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
+          <Input id="fullName" value={values.fullName} onChange={set("fullName")} placeholder="Enter your full name" className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
           {errors.fullName && <p className={errCls}><AlertCircle className="h-3 w-3" />{errors.fullName}</p>}
         </div>
         <div>
           <Label htmlFor="email" className="text-white/80">Email *</Label>
-          <Input id="email" type="email" value={values.email} onChange={set("email")} placeholder="jane@company.com" className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
+          <Input id="email" type="email" value={values.email} onChange={set("email")} placeholder="Enter your email address" className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
           {errors.email && <p className={errCls}><AlertCircle className="h-3 w-3" />{errors.email}</p>}
         </div>
         <div>
           <Label htmlFor="phone" className="text-white/80">Phone *</Label>
-          <Input id="phone" value={values.phone} onChange={set("phone")} placeholder="+1 415 555 0123" className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
+          <Input id="phone" value={values.phone} onChange={set("phone")} placeholder="Enter your phone number" className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
           {errors.phone && <p className={errCls}><AlertCircle className="h-3 w-3" />{errors.phone}</p>}
         </div>
         <div>
           <Label htmlFor="businessName" className="text-white/80">Business Name *</Label>
-          <Input id="businessName" value={values.businessName} onChange={set("businessName")} placeholder="Acme Inc." className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
+          <Input id="businessName" value={values.businessName} onChange={set("businessName")} placeholder="Enter your business name" className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
           {errors.businessName && <p className={errCls}><AlertCircle className="h-3 w-3" />{errors.businessName}</p>}
         </div>
         <div className="md:col-span-2">
           <Label htmlFor="website" className="text-white/80">Website <span className="text-white/40">(optional)</span></Label>
-          <Input id="website" value={values.website} onChange={set("website")} placeholder="https://" className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
+          <Input id="website" value={values.website} onChange={set("website")} placeholder="https://yourwebsite.com (Optional)" className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
         </div>
         <div>
           <Label className="text-white/80">Service Required *</Label>
@@ -158,7 +158,7 @@ export default function ContactForm() {
       </div>
       <div>
         <Label htmlFor="message" className="text-white/80">Message *</Label>
-        <Textarea id="message" value={values.message} onChange={set("message")} placeholder="Tell us about the project, goals, and timeline..." rows={5} className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
+        <Textarea id="message" value={values.message} onChange={set("message")} placeholder="Tell us about your project..." rows={5} className="mt-2 bg-white/5 border-white/10 text-white placeholder:text-white/30" />
         {errors.message && <p className={errCls}><AlertCircle className="h-3 w-3" />{errors.message}</p>}
       </div>
       <Button
