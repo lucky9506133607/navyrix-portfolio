@@ -25,7 +25,7 @@ async function getDb() {
 }
 
 // ============================================================
-// JSON helper
+// JSON RESPONSE HELPER
 // ============================================================
 
 function json(data, status = 200) {
@@ -38,7 +38,7 @@ function json(data, status = 200) {
 }
 
 // ============================================================
-// Email validation
+// EMAIL VALIDATION
 // ============================================================
 
 function validEmail(email) {
@@ -48,134 +48,17 @@ function validEmail(email) {
 }
 
 // ============================================================
-// WEB3FORMS - CONTACT FORM
+// NEWSLETTER PROVIDER
 // ============================================================
 //
-// Contact form flow:
-//
-// Frontend
-//    ↓
-// /api/contact
-//    ↓
-// MongoDB
-//    ↓
-// Web3Forms
-//    ↓
-// Your email
-//
-// Required Vercel variable:
-//
-// WEB3FORMS_ACCESS_KEY
-//
-// ============================================================
-
-async function forwardLead(payload) {
-  const accessKey = process.env.WEB3FORMS_ACCESS_KEY;
-
-  if (!accessKey) {
-    console.error(
-      "[Web3Forms] WEB3FORMS_ACCESS_KEY is missing"
-    );
-
-    return {
-      ok: false,
-      error: "WEB3FORMS_ACCESS_KEY is missing",
-    };
-  }
-
-  try {
-    const web3Response = await fetch(
-      "https://api.web3forms.com/submit",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-
-        body: JSON.stringify({
-          access_key: accessKey,
-
-          subject: `New NAVYRIX Lead — ${payload.fullName}`,
-
-          from_name: "NAVYRIX Website",
-
-          name: payload.fullName,
-
-          email: payload.email,
-
-          phone: payload.phone,
-
-          businessName: payload.businessName,
-
-          website: payload.website || "",
-
-          service: payload.service,
-
-          budget: payload.budget,
-
-          message: payload.message,
-
-          replyto: payload.email,
-        }),
-      }
-    );
-
-    const result = await web3Response.json();
-
-    console.log("[Web3Forms]", {
-      status: web3Response.status,
-      success: result?.success,
-      message: result?.message,
-    });
-
-    if (!web3Response.ok || !result?.success) {
-      console.error(
-        "[Web3Forms] Email failed:",
-        result
-      );
-
-      return {
-        ok: false,
-        error:
-          result?.message ||
-          "Web3Forms submission failed",
-      };
-    }
-
-    console.log(
-      "[Web3Forms] Email sent successfully"
-    );
-
-    return {
-      ok: true,
-    };
-  } catch (error) {
-    console.error(
-      "[Web3Forms] Request error:",
-      error
-    );
-
-    return {
-      ok: false,
-      error: String(
-        error?.message || error
-      ),
-    };
-  }
-}
-
-// ============================================================
-// NEWSLETTER
-// ============================================================
-//
-// Newsletter still uses your existing Resend integration.
+// Newsletter can continue using Resend.
 //
 // Set:
-//
 // NEWSLETTER_PROVIDER=resend
 //
+// Contact form email is NOT handled here.
+// Contact form email is sent directly from ContactForm.js
+// through Web3Forms.
 // ============================================================
 
 async function forwardNewsletter(email) {
@@ -184,9 +67,9 @@ async function forwardNewsletter(email) {
   ).toLowerCase();
 
   try {
-    // -------------------------
+    // --------------------------------------------------------
     // Mailchimp
-    // -------------------------
+    // --------------------------------------------------------
 
     if (
       provider === "mailchimp" &&
@@ -195,7 +78,7 @@ async function forwardNewsletter(email) {
       const dc =
         process.env.MAILCHIMP_API_KEY.split("-")[1];
 
-      await fetch(
+      const response = await fetch(
         `https://${dc}.api.mailchimp.com/3.0/lists/${process.env.MAILCHIMP_LIST_ID}/members`,
         {
           method: "POST",
@@ -207,8 +90,7 @@ async function forwardNewsletter(email) {
                   process.env.MAILCHIMP_API_KEY
               ).toString("base64")}`,
 
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
 
           body: JSON.stringify({
@@ -217,24 +99,32 @@ async function forwardNewsletter(email) {
           }),
         }
       );
+
+      if (!response.ok) {
+        const text = await response.text();
+
+        console.error(
+          "[Newsletter] Mailchimp error:",
+          text
+        );
+      }
     }
 
-    // -------------------------
+    // --------------------------------------------------------
     // ConvertKit
-    // -------------------------
+    // --------------------------------------------------------
 
     else if (
       provider === "convertkit" &&
       process.env.CONVERTKIT_API_KEY
     ) {
-      await fetch(
+      const response = await fetch(
         `https://api.convertkit.com/v3/forms/${process.env.CONVERTKIT_FORM_ID}/subscribe`,
         {
           method: "POST",
 
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
 
           body: JSON.stringify({
@@ -245,17 +135,34 @@ async function forwardNewsletter(email) {
           }),
         }
       );
+
+      if (!response.ok) {
+        const text = await response.text();
+
+        console.error(
+          "[Newsletter] ConvertKit error:",
+          text
+        );
+      }
     }
 
-    // -------------------------
+    // --------------------------------------------------------
     // Resend
-    // -------------------------
+    // --------------------------------------------------------
 
     else if (
       provider === "resend" &&
       process.env.RESEND_API_KEY
     ) {
-      await subscribeNewsletter(email);
+      const result =
+        await subscribeNewsletter(email);
+
+      if (!result?.ok && !result?.skipped) {
+        console.error(
+          "[Newsletter] Resend failed:",
+          result?.error
+        );
+      }
     }
 
     return {
@@ -288,9 +195,9 @@ export async function GET(request, { params }) {
     ? path.join("/")
     : path;
 
-  // -------------------------
-  // Health
-  // -------------------------
+  // ==========================================================
+  // HEALTH CHECK
+  // ==========================================================
 
   if (
     route === "" ||
@@ -302,9 +209,9 @@ export async function GET(request, { params }) {
     });
   }
 
-  // -------------------------
-  // Leads
-  // -------------------------
+  // ==========================================================
+  // GET LEADS
+  // ==========================================================
 
   if (route === "leads") {
     try {
@@ -337,16 +244,18 @@ export async function GET(request, { params }) {
 
       return json(
         {
-          error: error.message,
+          error:
+            error?.message ||
+            "Unable to fetch leads",
         },
         500
       );
     }
   }
 
-  // -------------------------
-  // Newsletter
-  // -------------------------
+  // ==========================================================
+  // GET NEWSLETTER SUBSCRIBERS
+  // ==========================================================
 
   if (route === "newsletter") {
     try {
@@ -380,12 +289,18 @@ export async function GET(request, { params }) {
 
       return json(
         {
-          error: error.message,
+          error:
+            error?.message ||
+            "Unable to fetch subscribers",
         },
         500
       );
     }
   }
+
+  // ==========================================================
+  // UNKNOWN GET ROUTE
+  // ==========================================================
 
   return json(
     {
@@ -428,9 +343,9 @@ export async function POST(request, { params }) {
         message,
       } = body || {};
 
-      // -------------------------
+      // --------------------------------------------------------
       // Required fields
-      // -------------------------
+      // --------------------------------------------------------
 
       if (
         !fullName ||
@@ -450,9 +365,9 @@ export async function POST(request, { params }) {
         );
       }
 
-      // -------------------------
-      // Email validation
-      // -------------------------
+      // --------------------------------------------------------
+      // Validate email
+      // --------------------------------------------------------
 
       if (!validEmail(email)) {
         return json(
@@ -464,9 +379,9 @@ export async function POST(request, { params }) {
         );
       }
 
-      // -------------------------
-      // Create lead
-      // -------------------------
+      // --------------------------------------------------------
+      // Create lead document
+      // --------------------------------------------------------
 
       const doc = {
         id: uuidv4(),
@@ -488,9 +403,11 @@ export async function POST(request, { params }) {
         website:
           String(website || "").trim(),
 
-        service,
+        service:
+          String(service).trim(),
 
-        budget,
+        budget:
+          String(budget).trim(),
 
         message:
           String(message).trim(),
@@ -503,8 +420,7 @@ export async function POST(request, { params }) {
       };
 
       // ========================================================
-      // STEP 1
-      // SAVE LEAD TO MONGODB
+      // SAVE CONTACT LEAD TO MONGODB
       // ========================================================
 
       const db = await getDb();
@@ -521,23 +437,15 @@ export async function POST(request, { params }) {
       );
 
       // ========================================================
-      // STEP 2
-      // SEND EMAIL THROUGH WEB3FORMS
+      // IMPORTANT
       // ========================================================
-
-      const emailResult =
-        await forwardLead(doc);
-
-      if (!emailResult.ok) {
-        console.error(
-          "[Contact] Web3Forms failed:",
-          emailResult.error
-        );
-      }
-
-      // ========================================================
-      // STEP 3
-      // RETURN SUCCESS
+      //
+      // Email is NOT sent from this route.
+      //
+      // ContactForm.js sends the email directly to Web3Forms.
+      //
+      // This avoids the Web3Forms server-side restriction/error.
+      //
       // ========================================================
 
       return json({
@@ -547,9 +455,6 @@ export async function POST(request, { params }) {
 
         message:
           "Thanks! We'll be in touch within one business day.",
-
-        emailSent:
-          emailResult.ok,
       });
     } catch (error) {
       console.error(
@@ -560,7 +465,8 @@ export async function POST(request, { params }) {
       return json(
         {
           error:
-            error.message,
+            error?.message ||
+            "Unable to submit contact form",
         },
         500
       );
@@ -578,9 +484,9 @@ export async function POST(request, { params }) {
 
       const { email } = body || {};
 
-      // -------------------------
+      // --------------------------------------------------------
       // Validate email
-      // -------------------------
+      // --------------------------------------------------------
 
       if (!validEmail(email)) {
         return json(
@@ -599,9 +505,9 @@ export async function POST(request, { params }) {
 
       const db = await getDb();
 
-      // -------------------------
+      // --------------------------------------------------------
       // Check duplicate
-      // -------------------------
+      // --------------------------------------------------------
 
       const existing =
         await db
@@ -621,9 +527,9 @@ export async function POST(request, { params }) {
         });
       }
 
-      // -------------------------
+      // --------------------------------------------------------
       // Create subscriber
-      // -------------------------
+      // --------------------------------------------------------
 
       const doc = {
         id: uuidv4(),
@@ -634,9 +540,9 @@ export async function POST(request, { params }) {
           new Date().toISOString(),
       };
 
-      // -------------------------
-      // Save to MongoDB
-      // -------------------------
+      // --------------------------------------------------------
+      // Save subscriber to MongoDB
+      // --------------------------------------------------------
 
       await db
         .collection("newsletter")
@@ -644,13 +550,28 @@ export async function POST(request, { params }) {
           ...doc,
         });
 
-      // -------------------------
-      // Send newsletter email
-      // -------------------------
-
-      await forwardNewsletter(
+      console.log(
+        "[Newsletter] Subscriber saved to MongoDB:",
         clean
       );
+
+      // --------------------------------------------------------
+      // Forward to newsletter provider
+      // --------------------------------------------------------
+
+      const newsletterResult =
+        await forwardNewsletter(clean);
+
+      if (!newsletterResult.ok) {
+        console.error(
+          "[Newsletter] Provider failed:",
+          newsletterResult.error
+        );
+      }
+
+      // --------------------------------------------------------
+      // Return success
+      // --------------------------------------------------------
 
       return json({
         ok: true,
@@ -667,7 +588,8 @@ export async function POST(request, { params }) {
       return json(
         {
           error:
-            error.message,
+            error?.message ||
+            "Unable to subscribe",
         },
         500
       );
@@ -675,7 +597,7 @@ export async function POST(request, { params }) {
   }
 
   // ==========================================================
-  // UNKNOWN ROUTE
+  // UNKNOWN POST ROUTE
   // ==========================================================
 
   return json(
