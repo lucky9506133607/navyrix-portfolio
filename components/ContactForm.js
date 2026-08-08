@@ -54,26 +54,120 @@ export default function ContactForm() {
     return Object.keys(e).length === 0;
   };
 
-  const submit = async (ev) => {
-    ev.preventDefault();
-    if (!validate()) return;
-    setStatus("loading");
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Something went wrong");
-      setStatus("success");
-      toast.success(data.message || "Message sent!");
-      setValues(EMPTY);
-    } catch (err) {
-      setStatus("error");
-      toast.error(err.message);
+ const submit = async (ev) => {
+  ev.preventDefault();
+
+  if (!validate()) return;
+
+  setStatus("loading");
+
+  try {
+    // =====================================================
+    // STEP 1: Save lead to MongoDB
+    // =====================================================
+
+    const mongoRes = await fetch("/api/contact", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(values),
+    });
+
+    const mongoData = await mongoRes.json();
+
+    if (!mongoRes.ok) {
+      throw new Error(
+        mongoData.error || "Unable to save your message"
+      );
     }
-  };
+
+    console.log(
+      "[Contact] Lead saved to MongoDB:",
+      mongoData.id
+    );
+
+    // =====================================================
+    // STEP 2: Send email directly from browser via Web3Forms
+    // =====================================================
+
+    const web3Response = await fetch(
+      "https://api.web3forms.com/submit",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+
+        body: JSON.stringify({
+          access_key:
+            process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY,
+
+          subject: `New NAVYRIX Lead — ${values.fullName}`,
+
+          from_name: "NAVYRIX Website",
+
+          name: values.fullName,
+
+          email: values.email,
+
+          phone: values.phone,
+
+          businessName: values.businessName,
+
+          website: values.website || "",
+
+          service: values.service,
+
+          budget: values.budget,
+
+          message: values.message,
+
+          replyto: values.email,
+        }),
+      }
+    );
+
+    const web3Data = await web3Response.json();
+
+    console.log("[Web3Forms] Response:", web3Data);
+
+    if (!web3Response.ok || !web3Data.success) {
+      throw new Error(
+        web3Data.message ||
+          "Message was saved, but email could not be sent."
+      );
+    }
+
+    // =====================================================
+    // SUCCESS
+    // =====================================================
+
+    setStatus("success");
+
+    toast.success(
+      "Message sent successfully!"
+    );
+
+    setValues(EMPTY);
+
+  } catch (err) {
+
+    console.error(
+      "[Contact Form Error]",
+      err
+    );
+
+    setStatus("error");
+
+    toast.error(
+      err?.message ||
+        "Something went wrong. Please try again."
+    );
+  }
+};
 
   if (status === "success") {
     return (
