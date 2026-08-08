@@ -48,6 +48,129 @@ function validEmail(email) {
 }
 
 // ============================================================
+// GOOGLE APPS SCRIPT AUTO-REPLY
+// ============================================================
+//
+// Contact form flow:
+//
+// User
+//   ↓
+// ContactForm.js
+//   ↓
+// /api/contact
+//   ↓
+// MongoDB
+//   ↓
+// Google Apps Script
+//   ↓
+// Customer confirmation email
+//
+// Required Vercel environment variable:
+//
+// GOOGLE_APPS_SCRIPT_URL
+//
+// ============================================================
+
+async function sendCustomerAutoReply(lead) {
+  const scriptUrl = process.env.GOOGLE_APPS_SCRIPT_URL;
+
+  if (!scriptUrl) {
+    console.warn(
+      "[Auto Reply] GOOGLE_APPS_SCRIPT_URL is not configured"
+    );
+
+    return {
+      ok: false,
+      skipped: true,
+      error: "GOOGLE_APPS_SCRIPT_URL is missing",
+    };
+  }
+
+  try {
+    const response = await fetch(scriptUrl, {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+        fullName: lead.fullName,
+        email: lead.email,
+        phone: lead.phone,
+        businessName: lead.businessName,
+        website: lead.website,
+        service: lead.service,
+        budget: lead.budget,
+        message: lead.message,
+      }),
+    });
+
+    const responseText = await response.text();
+
+    console.log("[Auto Reply] Google Apps Script response:", {
+      status: response.status,
+      response: responseText,
+    });
+
+    if (!response.ok) {
+      console.error(
+        "[Auto Reply] Google Apps Script request failed:",
+        responseText
+      );
+
+      return {
+        ok: false,
+        error: responseText || "Auto-reply request failed",
+      };
+    }
+
+    // Google Apps Script normally returns JSON.
+    // We don't force JSON parsing here so that even a
+    // non-JSON successful response doesn't break the form.
+    let result = null;
+
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      result = null;
+    }
+
+    if (result && result.success === false) {
+      console.error(
+        "[Auto Reply] Google Apps Script reported failure:",
+        result
+      );
+
+      return {
+        ok: false,
+        error:
+          result.message ||
+          "Google Apps Script failed to send auto-reply",
+      };
+    }
+
+    console.log(
+      "[Auto Reply] Customer confirmation request completed successfully"
+    );
+
+    return {
+      ok: true,
+    };
+  } catch (error) {
+    console.error(
+      "[Auto Reply] Request error:",
+      error
+    );
+
+    return {
+      ok: false,
+      error: String(error?.message || error),
+    };
+  }
+}
+
+// ============================================================
 // NEWSLETTER PROVIDER
 // ============================================================
 //
@@ -420,7 +543,7 @@ export async function POST(request, { params }) {
       };
 
       // ========================================================
-      // SAVE CONTACT LEAD TO MONGODB
+      // STEP 1: SAVE CONTACT LEAD TO MONGODB
       // ========================================================
 
       const db = await getDb();
@@ -437,15 +560,35 @@ export async function POST(request, { params }) {
       );
 
       // ========================================================
-      // IMPORTANT
+      // STEP 2: SEND CUSTOMER AUTO-REPLY
       // ========================================================
       //
-      // Email is NOT sent from this route.
+      // This is independent from Web3Forms.
       //
-      // ContactForm.js sends the email directly to Web3Forms.
+      // Web3Forms:
+      //   Customer form → Your NAVYRIX email
       //
-      // This avoids the Web3Forms server-side restriction/error.
+      // Google Apps Script:
+      //   Customer form → Customer's email
       //
+      // If auto-reply fails, the contact form will STILL
+      // return success because the lead has already been
+      // safely stored in MongoDB.
+      //
+      // ========================================================
+
+      const autoReplyResult =
+        await sendCustomerAutoReply(doc);
+
+      if (!autoReplyResult.ok && !autoReplyResult.skipped) {
+        console.error(
+          "[Contact] Customer auto-reply failed:",
+          autoReplyResult.error
+        );
+      }
+
+      // ========================================================
+      // STEP 3: RETURN SUCCESS
       // ========================================================
 
       return json({
@@ -454,7 +597,10 @@ export async function POST(request, { params }) {
         id: doc.id,
 
         message:
-          "Thanks! We'll be in touch within one business day.",
+          "Thanks! We've received your details and will get back to you within 1–2 business days.",
+
+        autoReplySent:
+          autoReplyResult.ok,
       });
     } catch (error) {
       console.error(
