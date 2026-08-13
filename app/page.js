@@ -58,7 +58,7 @@ function Nav() {
           <a href="#services" className="hover:text-white transition">Services</a>
           <a href="#work" className="hover:text-white transition">Work</a>
           <a href="#faq" className="hover:text-white transition">FAQ</a>
-          <a href="/pricing" className="hover:text-white transition">PRICING</a>
+          <a href="/pricing" className="hover:text-white transition">Pricing</a>
           <a href="#contact" className="hover:text-white transition">Contact</a>
         </nav>
         <a href="#contact">
