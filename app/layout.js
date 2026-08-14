@@ -1,6 +1,8 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { siteConfig } from "@/lib/config/site";
 
 const inter = Inter({
@@ -93,8 +95,10 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {children}
-        <Toaster position="top-center" richColors />
+          <Header />
+         {children}  
+          <Footer />
+          <Toaster position="top-center" richColors />
       </body>
     </html>
   );
