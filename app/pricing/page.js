@@ -107,64 +107,6 @@ export default function PricingPage() {
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-20 border-b border-white/10 bg-black/40 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-
-          <Link
-            href="/"
-            className="text-xl font-bold tracking-wide"
-          >
-            NAVY<span className="text-violet-400">RIX</span>
-          </Link>
-
-          <div className="hidden items-center gap-8 md:flex">
-
-            <Link
-              href="/"
-              className="text-sm text-white/60 transition hover:text-white"
-            >
-              Home
-            </Link>
-
-            <Link
-              href="/#services"
-              className="text-sm text-white/60 transition hover:text-white"
-            >
-              Services
-            </Link>
-
-            <Link
-              href="/#projects"
-              className="text-sm text-white/60 transition hover:text-white"
-            >
-              Projects
-            </Link>
-
-            <Link
-              href="/pricing"
-              className="text-sm text-white transition"
-            >
-              Pricing
-            </Link>
-
-            <Link
-              href="/#contact"
-              className="rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-2.5 text-sm font-semibold transition hover:scale-105"
-            >
-              Let's Talk
-            </Link>
-
-          </div>
-
-          <Link
-            href="/#contact"
-            className="rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-2 text-sm font-semibold md:hidden"
-          >
-            Let's Talk
-          </Link>
-
-        </div>
-      </nav>
 
       {/* Hero */}
       <section className="relative z-10 px-6 pb-16 pt-24 md:pb-20 md:pt-32">
@@ -403,31 +345,6 @@ export default function PricingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/10 px-6 py-8">
-
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
-
-          <Link
-            href="/"
-            className="text-lg font-bold"
-          >
-            NAVY<span className="text-violet-400">RIX</span>
-          </Link>
-
-          <p className="text-sm text-white/30">
-            © {new Date().getFullYear()} NAVYRIX. All rights reserved.
-          </p>
-
-          <Link
-            href="/#contact"
-            className="text-sm text-white/50 transition hover:text-white"
-          >
-            Contact Us →
-          </Link>
-
-        </div>
-
-      </footer>
 
     </main>
   );
