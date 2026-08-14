@@ -44,32 +44,6 @@ const fadeUp = {
   transition: { duration: 0.6, ease: "easeOut" },
 };
 
-function Nav() {
-  return (
-    <header className="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[min(1200px,calc(100%-2rem))]">
-      <div className="glass rounded-full flex items-center justify-between px-5 py-3">
-        <Link href="/" className="flex items-center gap-2 text-white font-semibold">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500">
-            <Sparkles className="h-4 w-4 text-white" />
-          </span>
-          {siteConfig.logoText}
-        </Link>
-        <nav className="hidden md:flex items-center gap-8 text-sm text-white/70">
-          <a href="#services" className="hover:text-white transition">Services</a>
-          <a href="#work" className="hover:text-white transition">Work</a>
-          <a href="#faq" className="hover:text-white transition">FAQ</a>
-          <a href="/pricing" className="hover:text-white transition">Pricing</a>
-          <a href="#contact" className="hover:text-white transition">Contact</a>
-        </nav>
-        <a href="#contact">
-          <Button size="sm" className="bg-white text-black hover:bg-white/90 font-medium rounded-full">
-            Get in touch <ArrowRight className="ml-1 h-4 w-4" />
-          </Button>
-        </a>
-      </div>
-    </header>
-  );
-}
 
 function Hero() {
   return (
@@ -382,58 +356,14 @@ function Contact() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="border-t border-white/10 py-12 mt-8">
-      <div className="container">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 text-white font-semibold">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500">
-                <Sparkles className="h-4 w-4 text-white" />
-              </span>
-              {siteConfig.agencyName}
-            </div>
-            <p className="mt-3 text-sm text-white/50 max-w-sm">{siteConfig.tagline}</p>
-            {siteConfig.founders?.length ? (
-              <div className="mt-3 space-y-0.5 text-xs text-white/50">
-                {siteConfig.founders.map((f) => (
-                  <div key={f.name}>
-                    <span className="text-white/70">{f.name}</span>
-                    <span className="text-white/40"> · {f.role}</span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-          <div className="flex flex-col md:items-end gap-4">
-            <SocialLinks />
-            <a href={whatsappLink()} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm" className="border-emerald-500/30 bg-emerald-500/5 text-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-200">
-                <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
-              </Button>
-            </a>
-          </div>
-        </div>
-        <div className="mt-10 pt-6 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/40">
-          <div>© {new Date().getFullYear()} {siteConfig.agencyName}. All rights reserved.</div>
-          <div>{siteConfig.contact.hours}</div>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 function App() {
   return (
     <main className="relative min-h-screen bg-background text-foreground overflow-x-hidden">
-      <Nav />
       <Hero />
       <Services />
       <Portfolio />
       <FAQ />
       <Contact />
-      <Footer />
       <WhatsAppFloat />
     </main>
   );
