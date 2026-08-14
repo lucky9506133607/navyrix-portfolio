@@ -95,7 +95,7 @@ const addOns = [
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-[#050505] text-white overflow-hidden">
+    <main className="min-h-screen bg-[#050505] text-white overflow-hidden [&_footer]:mt-0">
 
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none">
